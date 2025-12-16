@@ -1,0 +1,234 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  CHAUFFEUR
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TripStatus {
+  ASSIGNED
+  EN_ROUTE_PICKUP
+  ON_LOCATION
+  EN_ROUTE_DROPOFF
+  COMPLETED
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_SERVICE
+  MAINTENANCE
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum QuoteStatus {
+  PENDING
+  SENT
+  ACCEPTED
+  EXPIRED
+  REJECTED
+}
+
+enum VehicleType {
+  SEDAN
+  SUV
+  LUXURY
+  VAN
+  LIMOUSINE
+}
+
+// Core Models
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         UserRole
+  firstName    String
+  lastName     String
+  phone        String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  customer  Customer?
+  chauffeur Chauffeur?
+
+  @@map("users")
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  companyName    String?
+  billingAddress String?
+  preferences    String?  @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  quotes       Quote[]
+
+  @@map("customers")
+}
+
+model Chauffeur {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  licenseNumber String   @unique
+  vehicleId     String?
+  status        String   @default("available")
+  rating        Float?   @default(5.0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id])
+  reservations Reservation[]
+  trips        Trip[]
+
+  @@map("chauffeurs")
+}
+
+model Vehicle {
+  id           String        @id @default(cuid())
+  make         String
+  model        String
+  year         Int
+  licensePlate String        @unique
+  capacity     Int
+  type         VehicleType
+  status       VehicleStatus @default(AVAILABLE)
+  amenities    String?       @default("[]")
+  imageUrl     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  chauffeurs   Chauffeur[]
+  reservations Reservation[]
+
+  @@map("vehicles")
+}
+
+model Reservation {
+  id                  String            @id @default(cuid())
+  customerId          String
+  chauffeurId         String?
+  vehicleId           String?
+  pickupLocation      String
+  pickupLatitude      Float?
+  pickupLongitude     Float?
+  pickupDatetime      DateTime
+  dropoffLocation     String
+  dropoffLatitude     Float?
+  dropoffLongitude    Float?
+  dropoffDatetime     DateTime?
+  status              ReservationStatus @default(PENDING)
+  estimatedDistance   Float?
+  estimatedDuration   Int?
+  basePrice           Float?
+  totalPrice          Float?
+  specialInstructions String?
+  passengerCount      Int               @default(1)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  chauffeur Chauffeur? @relation(fields: [chauffeurId], references: [id])
+  vehicle   Vehicle?   @relation(fields: [vehicleId], references: [id])
+  trip      Trip?
+  payment   Payment?
+
+  @@map("reservations")
+}
+
+model Trip {
+  id                 String     @id @default(cuid())
+  reservationId      String     @unique
+  chauffeurId        String
+  actualPickupTime   DateTime?
+  actualDropoffTime  DateTime?
+  actualDistance     Float?
+  actualDuration     Int?
+  status             TripStatus @default(ASSIGNED)
+  gpsCoordinates     String?    @default("[]")
+  notes              String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  chauffeur   Chauffeur   @relation(fields: [chauffeurId], references: [id])
+
+  @@map("trips")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  reservationId         String        @unique
+  amount                Float
+  status                PaymentStatus @default(PENDING)
+  paymentMethod         String?
+  transactionId         String?       @unique
+  stripePaymentIntentId String?       @unique
+  stripeClientSecret    String?
+  metadata              String?       @default("{}")
+  createdAt             DateTime      @default(now())
+  completedAt           DateTime?
+  updatedAt             DateTime      @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+
+  @@map("payments")
+}
+
+model Quote {
+  id                String      @id @default(cuid())
+  customerId        String
+  pickupLocation    String
+  pickupLatitude    Float?
+  pickupLongitude   Float?
+  dropoffLocation   String
+  dropoffLatitude   Float?
+  dropoffLongitude  Float?
+  requestedDatetime DateTime
+  vehicleType       VehicleType
+  passengerCount    Int         @default(1)
+  estimatedPrice    Float?
+  estimatedDistance Float?
+  estimatedDuration Int?
+  status            QuoteStatus @default(PENDING)
+  validUntil        DateTime?
+  notes             String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("quotes")
+}

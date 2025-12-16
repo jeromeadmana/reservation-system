@@ -1,0 +1,36 @@
+{
+  "name": "reservation-system",
+  "version": "1.0.0",
+  "description": "Chauffeur Reservation Management System",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend-customer",
+    "frontend-admin",
+    "frontend-chauffeur",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:customer\" \"npm run dev:admin\" \"npm run dev:chauffeur\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:customer": "npm run dev --workspace=frontend-customer",
+    "dev:admin": "npm run dev --workspace=frontend-admin",
+    "dev:chauffeur": "npm run dev --workspace=frontend-chauffeur",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "prisma:generate": "npm run prisma:generate --workspace=backend",
+    "prisma:migrate": "npm run prisma:migrate --workspace=backend",
+    "prisma:studio": "npm run prisma:studio --workspace=backend"
+  },
+  "keywords": [
+    "reservation",
+    "chauffeur",
+    "booking",
+    "transportation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
