@@ -6,6 +6,7 @@ import {
   UpdateReservationInput,
   PaginationInput,
 } from '../utils/validators';
+import { env } from '../config/env';
 
 export class ReservationService {
   async getCustomerByUserId(userId: string) {
@@ -32,6 +33,19 @@ export class ReservationService {
 
     if (!customer) {
       throw new NotFoundError('Customer not found');
+    }
+
+    // Demo mode: Check reservation limit
+    if (env.DEMO_MODE) {
+      const existingReservations = await prisma.reservation.count({
+        where: { customerId },
+      });
+
+      if (existingReservations >= env.DEMO_MAX_RESERVATIONS) {
+        throw new BadRequestError(
+          `Demo limit reached: Maximum ${env.DEMO_MAX_RESERVATIONS} reservations allowed. Please delete existing reservations to continue.`
+        );
+      }
     }
 
     // Calculate estimated price (simplified logic)
@@ -306,6 +320,72 @@ export class ReservationService {
     });
 
     return cancelled;
+  }
+
+  async deleteReservation(reservationId: string, userId: string, userRole: UserRole) {
+    const reservation = await this.getReservation(reservationId, userId, userRole);
+
+    // Delete related records first
+    await prisma.trip.deleteMany({
+      where: { reservationId },
+    });
+
+    await prisma.payment.deleteMany({
+      where: { reservationId },
+    });
+
+    // Delete the reservation
+    await prisma.reservation.delete({
+      where: { id: reservationId },
+    });
+
+    return { message: 'Reservation deleted successfully' };
+  }
+
+  async deleteAllReservations(userId: string, userRole: UserRole) {
+    if (!env.DEMO_MODE) {
+      throw new ForbiddenError('This feature is only available in demo mode');
+    }
+
+    let customerId: string | undefined;
+
+    if (userRole === UserRole.CUSTOMER) {
+      const customer = await prisma.customer.findUnique({
+        where: { userId },
+      });
+      customerId = customer?.id;
+    }
+
+    if (!customerId) {
+      throw new NotFoundError('Customer not found');
+    }
+
+    // Get all reservation IDs for this customer
+    const reservations = await prisma.reservation.findMany({
+      where: { customerId },
+      select: { id: true },
+    });
+
+    const reservationIds = reservations.map((r) => r.id);
+
+    // Delete all related records
+    await prisma.trip.deleteMany({
+      where: { reservationId: { in: reservationIds } },
+    });
+
+    await prisma.payment.deleteMany({
+      where: { reservationId: { in: reservationIds } },
+    });
+
+    // Delete all reservations
+    const result = await prisma.reservation.deleteMany({
+      where: { customerId },
+    });
+
+    return {
+      message: 'All reservations deleted successfully',
+      deletedCount: result.count,
+    };
   }
 
   // Helper method to calculate distance (simplified Haversine formula)

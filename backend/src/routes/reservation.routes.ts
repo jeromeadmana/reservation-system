@@ -63,4 +63,26 @@ router.patch('/:id', reservationController.update);
  */
 router.post('/:id/cancel', reservationController.cancel);
 
+/**
+ * @swagger
+ * /api/reservations/{id}:
+ *   delete:
+ *     summary: Delete a reservation (Demo mode)
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete('/:id', reservationController.delete);
+
+/**
+ * @swagger
+ * /api/reservations/demo/reset:
+ *   post:
+ *     summary: Delete all reservations (Demo mode only)
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/demo/reset', authorize(UserRole.CUSTOMER), reservationController.deleteAll);
+
 export default router;

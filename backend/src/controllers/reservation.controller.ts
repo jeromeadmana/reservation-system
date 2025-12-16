@@ -99,6 +99,40 @@ export class ReservationController {
       next(error);
     }
   }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const result = await reservationService.deleteReservation(
+        id,
+        req.user!.id,
+        req.user!.role
+      );
+
+      res.json({
+        success: true,
+        ...result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteAll(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await reservationService.deleteAllReservations(
+        req.user!.id,
+        req.user!.role
+      );
+
+      res.json({
+        success: true,
+        ...result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const reservationController = new ReservationController();

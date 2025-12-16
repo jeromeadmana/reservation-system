@@ -45,6 +45,33 @@ export default function ReservationsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this reservation?')) {
+      return;
+    }
+
+    try {
+      await reservationAPI.delete(id);
+      fetchReservations();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete reservation');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!window.confirm('⚠️ This will permanently delete ALL your reservations. This action cannot be undone. Continue?')) {
+      return;
+    }
+
+    try {
+      const response = await reservationAPI.deleteAll();
+      alert(response.data.message || 'All reservations deleted successfully');
+      fetchReservations();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete reservations');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       PENDING: 'bg-yellow-100 text-yellow-800',
@@ -79,12 +106,22 @@ export default function ReservationsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800">My Reservations</h2>
-          <Link
-            to="/book"
-            className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            New Booking
-          </Link>
+          <div className="flex gap-3">
+            {reservations.length > 0 && (
+              <button
+                onClick={handleDeleteAll}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Reset Demo
+              </button>
+            )}
+            <Link
+              to="/book"
+              className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              New Booking
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -154,11 +191,17 @@ export default function ReservationsPage() {
                       reservation.status === 'CONFIRMED') && (
                       <button
                         onClick={() => handleCancel(reservation.id)}
-                        className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                        className="px-4 py-2 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors"
                       >
                         Cancel
                       </button>
                     )}
+                    <button
+                      onClick={() => handleDelete(reservation.id)}
+                      className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               </div>

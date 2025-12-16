@@ -8,6 +8,7 @@ const envSchema = z.object({
   PORT: z.string().default('3000'),
   API_VERSION: z.string().default('v1'),
   DATABASE_URL: z.string(),
+  DIRECT_URL: z.string().optional(),
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
   JWT_REFRESH_SECRET: z.string().min(32),
@@ -22,6 +23,8 @@ const envSchema = z.object({
   MAX_FILE_SIZE: z.string().default('5242880'),
   UPLOAD_PATH: z.string().default('./uploads'),
   LOG_LEVEL: z.string().default('info'),
+  DEMO_MODE: z.string().default('false'),
+  DEMO_MAX_RESERVATIONS: z.string().default('5'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -38,6 +41,8 @@ export const env = {
   RATE_LIMIT_MAX_REQUESTS: parseInt(parsed.data.RATE_LIMIT_MAX_REQUESTS, 10),
   MAX_FILE_SIZE: parseInt(parsed.data.MAX_FILE_SIZE, 10),
   CORS_ORIGINS: parsed.data.CORS_ORIGIN.split(','),
+  DEMO_MODE: parsed.data.DEMO_MODE === 'true',
+  DEMO_MAX_RESERVATIONS: parseInt(parsed.data.DEMO_MAX_RESERVATIONS, 10),
 };
 
 export type Env = typeof env;

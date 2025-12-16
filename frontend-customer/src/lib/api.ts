@@ -46,6 +46,8 @@ export const reservationAPI = {
   get: (id: string) => api.get(`/reservations/${id}`),
   update: (id: string, data: any) => api.patch(`/reservations/${id}`, data),
   cancel: (id: string) => api.post(`/reservations/${id}/cancel`),
+  delete: (id: string) => api.delete(`/reservations/${id}`),
+  deleteAll: () => api.post('/reservations/demo/reset'),
 };
 
 export default api;
