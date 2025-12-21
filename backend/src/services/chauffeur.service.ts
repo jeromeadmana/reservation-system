@@ -1,6 +1,7 @@
 import { TripStatus, ReservationStatus } from '@prisma/client';
 import prisma from '../config/database';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+import { websocketService } from './websocket.service';
 
 export class ChauffeurService {
   async getChauffeurByUserId(userId: string) {
@@ -190,6 +191,9 @@ export class ChauffeurService {
         },
       }),
     ]);
+
+    // Broadcast status update via WebSocket
+    websocketService.broadcastTripStatus(tripId, newStatus);
 
     return updatedTrip;
   }

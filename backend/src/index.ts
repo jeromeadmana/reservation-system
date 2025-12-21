@@ -1,7 +1,9 @@
+import { createServer } from 'http';
 import app from './app';
 import { env } from './config/env';
 import prisma from './config/database';
 import logger from './config/logger';
+import { websocketService } from './services/websocket.service';
 
 const PORT = env.PORT || 3000;
 
@@ -21,10 +23,17 @@ async function startServer() {
   try {
     await connectDatabase();
 
-    app.listen(PORT, () => {
+    // Create HTTP server
+    const httpServer = createServer(app);
+
+    // Initialize WebSocket
+    websocketService.initialize(httpServer);
+
+    httpServer.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);
       logger.info(`📝 Environment: ${env.NODE_ENV}`);
       logger.info(`🌐 API Base URL: http://localhost:${PORT}/api/${env.API_VERSION}`);
+      logger.info(`🔌 WebSocket available at: ws://localhost:${PORT}`);
     });
   } catch (error) {
     logger.error('❌ Failed to start server:', error);
